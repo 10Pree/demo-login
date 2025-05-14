@@ -1,0 +1,25 @@
+version: "3.7"
+
+services:
+  node-server:
+    build: .
+    ports:
+      - "8000:8000"
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root # กำหนด user ของ root mysql
+      MYSQL_DATABASE: tutorial # กำหนด database เริ่มต้นของ mysql
+    ports:
+      - "3306:3306"
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    environment:
+      PMA_HOST: db # ระบุ host ที่จะให้ phpmyadmin ไปจัดการ ซึ่งสามารถใส่เป็นชื่อ container name (db) ได้เลย
+      PMA_PORT: 3306 # ระบุ port ของ Database
+      PMA_USER: root # ระบุ user ของ Database
+      PMA_PASSWORD: root # ระบุ password ของ Database
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
