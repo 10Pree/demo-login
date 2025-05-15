@@ -1,11 +1,14 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
 const mysql = require('mysql2/promise')
+const jwt = require('jsonwebtoken')
 // const cors = require('cors')
 
 const app = express()
 const port = 8000;
 let conn = null;
+var privateKey = "myprivateKey";
+
 
 
 
@@ -32,7 +35,7 @@ app.get("/api/hello1", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const [results] = await conn.query("SELECT * from users WHERE email = ?", email );
+    const [results] = await conn.query("SELECT * FROM users WHERE email = ?", [email] );
     const userDate = results[0];
     const match = await bcrypt.compare(password, userDate.password)
     if(!match){
@@ -41,9 +44,15 @@ app.post("/api/login", async (req, res) => {
       })
       return false
     }
-    res.status(201).json({
-      message: "Login",
-      userDate,
+
+    // JWT Token
+    const token = jwt.sign({email, role: "admin"}, privateKey,{expiresIn: "1h"})
+
+
+    res.status(200).json({
+      message: "Login success",
+      email: userDate.email,
+      Token: token
     });
   } catch (error) {
     console.log("Error", error);
@@ -80,6 +89,35 @@ app.post("/api/register", async (req, res) => {
     });
   }
 });
+
+app.get("/api/users", async(req,res) =>{
+  try{
+    const authHeader = req.headers.authorization
+    let authToken = ""
+    if(authHeader){
+      authToken = authHeader.split(" ")[1]
+    }
+    console.log(authToken)
+    const user = jwt.verify(authToken, privateKey)
+    console.log(user)
+
+    const [checkResults] = await conn.query("SELECT * FROM users WHERE email = ?", user.email)
+    if(!checkResults[0]){
+      throw { message: "user not found"}
+    }
+
+    const [results] = await conn.query("SELECT * from users")
+    res.status(200).json({
+      results
+    })
+  } catch(error){
+    console.log("Error", error)
+    res.status(400).json({
+      message: "authentication",
+      error
+    })
+  }
+})
 
 
 
