@@ -2,13 +2,12 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const mysql = require('mysql2/promise')
 const jwt = require('jsonwebtoken')
-// const cors = require('cors')
+const cors = require('cors')
 
 const app = express()
 const port = 8000;
 let conn = null;
 var privateKey = "myprivateKey";
-
 
 
 
@@ -22,6 +21,10 @@ const connectMySQL =  async () => {
 };
 
 
+app.use(cors({
+  origin: "http://127.0.0.1:5500",
+  credentials: true
+}))
 app.use(express.json())
 
 app.get("/api/hello1", async (req, res) => {
@@ -35,6 +38,7 @@ app.get("/api/hello1", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(email,password)
     const [results] = await conn.query("SELECT * FROM users WHERE email = ?", [email] );
     const userDate = results[0];
     const match = await bcrypt.compare(password, userDate.password)
@@ -44,14 +48,10 @@ app.post("/api/login", async (req, res) => {
       })
       return false
     }
-
     // JWT Token
     const token = jwt.sign({email, role: "admin"}, privateKey,{expiresIn: "1h"})
-
-
     res.status(200).json({
       message: "Login success",
-      email: userDate.email,
       Token: token
     });
   } catch (error) {
