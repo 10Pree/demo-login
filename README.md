@@ -1,2 +1,2 @@
 # demo-login
-demo Login Html, TailwindCSS
+demo Login Html, TailwindCSS, javascript 
