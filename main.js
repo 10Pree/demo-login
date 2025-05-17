@@ -52,7 +52,7 @@ app.post("/api/login", async (req, res) => {
     const token = jwt.sign({email, role: "admin"}, privateKey,{expiresIn: "1h"})
     res.status(200).json({
       message: "Login success",
-      Token: token
+      token: token
     });
   } catch (error) {
     console.log("Error", error);
@@ -112,8 +112,8 @@ app.get("/api/users", async(req,res) =>{
     })
   } catch(error){
     console.log("Error", error)
-    res.status(400).json({
-      message: "authentication",
+    res.status(403).json({
+      message: "access to the requested resource is forbidden",
       error
     })
   }
