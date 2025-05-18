@@ -2,15 +2,23 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const mysql = require('mysql2/promise')
 const jwt = require('jsonwebtoken')
+const cookieParser = require("cookie-parser");
 const cors = require('cors')
 
 const app = express()
+app.use(express.json())
+app.use(cors({
+  origin: "http://127.0.0.1:5500", // ระบุ URL หน้าเว็บไคลเอ็นต์
+  credentials: true // อนุญาตให้ส่งคุกกี้ข้ามโดเมน
+}))
+app.use(cookieParser())
+
 const port = 8000;
-let conn = null;
 var privateKey = "myprivateKey";
 
 
 
+let conn = null;
 const connectMySQL =  async () => {
   conn = await mysql.createConnection({
     host: "localhost",
@@ -21,11 +29,6 @@ const connectMySQL =  async () => {
 };
 
 
-app.use(cors({
-  origin: "http://127.0.0.1:5500",
-  credentials: true
-}))
-app.use(express.json())
 
 app.get("/api/hello1", async (req, res) => {
   res.json({
@@ -38,7 +41,6 @@ app.get("/api/hello1", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(email,password)
     const [results] = await conn.query("SELECT * FROM users WHERE email = ?", [email] );
     const userDate = results[0];
     const match = await bcrypt.compare(password, userDate.password)
@@ -50,10 +52,17 @@ app.post("/api/login", async (req, res) => {
     }
     // JWT Token
     const token = jwt.sign({email, role: "admin"}, privateKey,{expiresIn: "1h"})
-    res.status(200).json({
-      message: "Login success",
-      token: token
+    // ตั้งค่า cookie ก่อนส่ง response
+    res.cookie("token", token, {
+      maxAge: 3600000,      // 1 ชั่วโมง (ms)
+      secure: true,  
+      httpOnly: true,
+      sameSite: "none",
     });
+
+    res.status(200).json({
+      message: "Login Success"
+    })
   } catch (error) {
     console.log("Error", error);
     res.json({
@@ -92,11 +101,12 @@ app.post("/api/register", async (req, res) => {
 
 app.get("/api/users", async(req,res) =>{
   try{
-    const authHeader = req.headers.authorization
-    let authToken = ""
-    if(authHeader){
-      authToken = authHeader.split(" ")[1]
-    }
+    // const authHeader = req.headers.authorization
+    const authToken = req.cookies.token
+    // let authToken = ""
+    // if(authHeader){
+    //   authToken = authHeader.split(" ")[1]
+    // }
     console.log(authToken)
     const user = jwt.verify(authToken, privateKey)
     console.log(user)
