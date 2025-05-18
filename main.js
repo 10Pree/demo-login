@@ -107,9 +107,9 @@ app.get("/api/users", async(req,res) =>{
     // if(authHeader){
     //   authToken = authHeader.split(" ")[1]
     // }
-    console.log(authToken)
+    // console.log(authToken)
     const user = jwt.verify(authToken, privateKey)
-    console.log(user)
+    // console.log(user)
 
     const [checkResults] = await conn.query("SELECT * FROM users WHERE email = ?", user.email)
     if(!checkResults[0]){
