@@ -3,15 +3,24 @@ const bcrypt = require('bcrypt')
 const mysql = require('mysql2/promise')
 const jwt = require('jsonwebtoken')
 const cookieParser = require("cookie-parser");
+const session = require('express-session')
 const cors = require('cors')
 
 const app = express()
 app.use(express.json())
 app.use(cors({
-  origin: "http://127.0.0.1:5500", // ระบุ URL หน้าเว็บไคลเอ็นต์
-  credentials: true // อนุญาตให้ส่งคุกกี้ข้ามโดเมน
+  origin: ["http://127.0.0.1:5500"], // ระบุ URL หน้าเว็บไคลเอ็นต์
+  credentials: true, // อนุญาตให้ส่งคุกกี้ข้ามโดเมน
 }))
 app.use(cookieParser())
+
+app.use(
+  session({
+    secret: "secret",
+    resave: false,
+    saveUninitialized: true,
+  }),
+);
 
 const port = 8000;
 var privateKey = "myprivateKey";
@@ -53,13 +62,17 @@ app.post("/api/login", async (req, res) => {
     // JWT Token
     const token = jwt.sign({email, role: "admin"}, privateKey,{expiresIn: "1h"})
     // ตั้งค่า cookie ก่อนส่ง response
-    res.cookie("token", token, {
-      maxAge: 3600000,      // 1 ชั่วโมง (ms)
-      secure: true,  
-      httpOnly: true,
-      sameSite: "none",
-    });
+    // res.cookie("token", token, {
+    //   maxAge: 3600000,      // 1 ชั่วโมง (ms)
+    //   secure: true,  
+    //   httpOnly: true,
+    //   sameSite: "none",
+    // });
 
+    req.session.userId = userDate.id
+    req.session.user = userDate
+
+    console.log(req.sessionID)
     res.status(200).json({
       message: "Login Success"
     })
@@ -102,19 +115,27 @@ app.post("/api/register", async (req, res) => {
 app.get("/api/users", async(req,res) =>{
   try{
     // const authHeader = req.headers.authorization
-    const authToken = req.cookies.token
+    // const authToken = req.cookies.token
     // let authToken = ""
     // if(authHeader){
     //   authToken = authHeader.split(" ")[1]
     // }
     // console.log(authToken)
-    const user = jwt.verify(authToken, privateKey)
+    // const user = jwt.verify(authToken, privateKey)
     // console.log(user)
 
-    const [checkResults] = await conn.query("SELECT * FROM users WHERE email = ?", user.email)
-    if(!checkResults[0]){
-      throw { message: "user not found"}
+    // const [checkResults] = await conn.query("SELECT * FROM users WHERE email = ?", user.email)
+    // if(!checkResults[0]){
+    //   throw { message: "user not found"}
+    // }
+
+    console.log(req.session)
+
+    if(!req.session.userId){
+      throw { message: "Auth fail"}
     }
+
+    console.log(req.session)
 
     const [results] = await conn.query("SELECT * from users")
     res.status(200).json({
