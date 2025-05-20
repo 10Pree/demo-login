@@ -6,21 +6,22 @@ const cookieParser = require("cookie-parser");
 const session = require('express-session')
 const cors = require('cors')
 
-const app = express()
-app.use(express.json())
+const app = express();
+app.use(express.json());
 app.use(cors({
-  origin: ["http://127.0.0.1:5500"], // ระบุ URL หน้าเว็บไคลเอ็นต์
+  origin: "http://localhost:5500", // ระบุ URL หน้าเว็บไคลเอ็นต์
   credentials: true, // อนุญาตให้ส่งคุกกี้ข้ามโดเมน
-}))
-app.use(cookieParser())
+}));
+app.use(cookieParser());
 
 app.use(
   session({
     secret: "secret",
     resave: false,
     saveUninitialized: true,
-  }),
+  })
 );
+
 
 const port = 8000;
 var privateKey = "myprivateKey";
@@ -129,13 +130,13 @@ app.get("/api/users", async(req,res) =>{
     //   throw { message: "user not found"}
     // }
 
-    console.log(req.session)
+    // console.log(req.session)
 
     if(!req.session.userId){
       throw { message: "Auth fail"}
     }
 
-    console.log(req.session)
+    // console.log(req.session)
 
     const [results] = await conn.query("SELECT * from users")
     res.status(200).json({
